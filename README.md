@@ -1,246 +1,109 @@
-# 🎬 Movie Recommendation System
+# Movie Recommendation System
 
-A simple end‑to‑end **content‑based / item–item collaborative** movie recommender built on the MovieLens dataset.  
-It provides:
-- a **FastAPI** backend with a `/recommend` endpoint, and
-- a **Streamlit** dashboard where users pick favorite movies and see personalized recommendations.
+![Python](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?style=flat-square&logo=fastapi)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red?style=flat-square&logo=streamlit)
+![Dataset](https://img.shields.io/badge/Dataset-MovieLens%20100K-lightgrey?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
-The screenshots below show the API root (`localhost:8000`) and the Streamlit UI (`localhost:8501`).
-
----
-
-## ✨ Features
-- Load MovieLens data and build a **user–movie interaction matrix**.
-- Compute **movie–movie cosine similarity** and cache it to `models/`.
-- REST API to return **top‑N similar movies** for a list of liked movie IDs.
-- Streamlit app for interactive selection and visualization of recommendations.
-- Clean project layout and reproducible scripts.
+End-to-end content-based and item-item collaborative filtering movie recommender built on the MovieLens 100K dataset. Provides a FastAPI backend with a `/recommend` endpoint and an interactive Streamlit dashboard for personalized recommendations.
 
 ---
 
-## 🧱 Project Structure
+## Business Problem
+
+Streaming platforms lose engagement when users cannot discover relevant content. This system identifies movies similar to what a user already enjoys — the same algorithm powering Netflix and Spotify recommendations — demonstrating cosine similarity-based collaborative filtering at scale.
+
+---
+
+## Features
+
+- Load MovieLens data and build a user-movie interaction matrix
+- Compute movie-movie cosine similarity, cached to disk
+- REST API: top-N similar movies for a list of liked movie IDs
+- Streamlit UI: interactive selection and recommendation visualization
+- Reproducible scripts: build similarity matrix once, serve instantly
+
+---
+
+## Project Structure
+
 ```
 movie-recommender/
-├─ api/
-│  └─ main.py                  # FastAPI app (endpoints: / and /recommend)
-├─ app/
-│  └─ streamlit_app.py         # Streamlit dashboard
-├─ data/
-│  └─ ml-100k/                 # MovieLens data (u.item, u.data, etc.)
-├─ models/
-│  └─ movie_similarity.npz     # Precomputed cosine-similarity matrix
-├─ scripts/
-│  └─ build_similarity.py      # Build & save the similarity matrix
-├─ utils/
-│  ├─ data.py                  # Load/clean data
-│  └─ recommender.py           # Core recommend() logic
-├─ requirements.txt
-└─ README.md
+├── api/
+│   └── main.py                  # FastAPI app (/ and /recommend)
+├── app/
+│   └── streamlit_app.py         # Streamlit dashboard
+├── data/
+│   └── ml-100k/                 # MovieLens files (u.item, u.data)
+├── models/
+│   └── movie_similarity.npz     # Precomputed similarity matrix
+├── scripts/
+│   └── build_similarity.py      # Build & cache similarity matrix
+├── utils/
+│   ├── data.py                  # Load and clean data
+│   └── recommender.py           # Core recommend() logic
+├── requirements.txt
+└── README.md
 ```
-> Tip: keep large artifacts (`data/`, `models/`) out of Git. Use `.gitignore` or Git LFS.
 
 ---
 
-## 📦 Setup
+## Quickstart
 
-### 1) Create and activate a virtual environment
 ```bash
-# Windows (PowerShell)
+# 1. Clone & setup
+git clone https://github.com/deepanshu0110/movie-recommender.git
+cd movie-recommender
 python -m venv .venv
-.\\.venv\\Scripts\\Activate.ps1
-
-# macOS/Linux
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 2) Install dependencies
-```bash
+source .venv/bin/activate  # Mac/Linux
+.venv\Scripts\activate     # Windows
 pip install -r requirements.txt
-```
 
-### 3) Download MovieLens (100k)
-Download **MovieLens 100k** from GroupLens and extract into `data/ml-100k/` so that files like `u.data`, `u.item` exist at:
-```
-data/ml-100k/u.data
-data/ml-100k/u.item
-```
+# 2. Download MovieLens 100K from https://grouplens.org/datasets/movielens/100k/
+# Extract to data/ml-100k/ (u.data and u.item must exist)
 
-### 4) Build the similarity matrix
-```bash
+# 3. Build similarity matrix (one-time)
 python scripts/build_similarity.py \
   --data_dir data/ml-100k \
   --out models/movie_similarity.npz
-```
-This script:
-- Loads movies & ratings, builds a **user–movie matrix** (rows = users, cols = movies).
-- Computes **cosine similarity** between movie vectors.
-- Saves a sparse array to `models/movie_similarity.npz` and a mapping of `movieId -> col index` (usually as `models/index.json`).
 
----
-
-## 🚀 Run the services
-
-### Backend API (FastAPI + Uvicorn)
-```bash
+# 4. Start API (Terminal 1)
 uvicorn api.main:app --reload --port 8000
-```
-Now open http://localhost:8000 — you should see:
-```json
-{"message":"Movie Recommendation API"}
-```
-Interactive docs: http://localhost:8000/docs
 
-#### `/recommend` (POST)
-**Request body**
-```json
-{
-  "liked_movie_ids": [50, 172, 181],
-  "top_n": 10
-}
+# 5. Start Dashboard (Terminal 2)
+streamlit run app/streamlit_app.py
 ```
-**Response** (example)
-```json
-{
-  "recommendations": [
-    {"movie_id": 96, "title": "Terminator 2: Judgment Day (1991)", "similarity": 0.321},
-    {"movie_id": 89, "title": "Blade Runner (1982)", "similarity": 0.313}
-  ]
-}
-```
-
-### Frontend (Streamlit)
-```bash
-streamlit run app/streamlit_app.py --server.port 8501
-```
-Open http://localhost:8501 and select your favorite movies, set **N**, and click **Get Recommendations**.
 
 ---
 
-## 🧪 Quick tests
+## API Usage
 
-**cURL**
 ```bash
+# Get top 5 movies similar to movie IDs 1, 50, 100
 curl -X POST http://localhost:8000/recommend \
-  -H "Content-Type: application/json" \
-  -d "{\"liked_movie_ids\":[50,172,181],\"top_n\":5}"
-```
-
-**Python**
-```python
-import requests
-r = requests.post("http://localhost:8000/recommend",
-                  json={"liked_movie_ids":[50,172,181], "top_n":5})
-print(r.json())
+  -H 'Content-Type: application/json' \
+  -d '{"movie_ids": [1, 50, 100], "top_n": 5}'
 ```
 
 ---
 
-## ⚙️ How it works (short version)
-1. **Matrix build**: Construct a dense/sparse matrix `R` of shape `(n_users, n_movies)` from `u.data` ratings.
-2. **Item–item similarity**: Compute cosine similarity across **columns** of `R` → `S = cosine_similarity(R.T)`.
-3. **Scoring**: Given liked movies `L`, score each candidate movie `m` as the weighted sum of similarities to `L`.
-4. **Filter & rank**: Exclude already‑liked movies and return top‑N by score.
+## Access
 
-You can switch to a TF‑IDF-of‑genres model or hybrid easily by editing `utils/recommender.py`.
-
----
-
-## 🗂️ Environment & config
-- Python ≥ 3.9
-- `requirements.txt` includes: `fastapi`, `uvicorn`, `pandas`, `numpy`, `scipy`, `scikit-learn`, `streamlit`, `pydantic`.
-
-If you store paths in a `.env`, load them in `api/main.py` and `app/streamlit_app.py` with `python-dotenv`.
+| Service | URL |
+|---|---|
+| API Root | http://localhost:8000 |
+| API Docs | http://localhost:8000/docs |
+| Dashboard | http://localhost:8501 |
 
 ---
 
-## ☁️ Deploying the code to **GitHub**
+## Tech Stack
 
-### A. One-time Git setup
-```bash
-git init
-git branch -M main
-
-# Good .gitignore (see below)
-echo "" >> .gitignore
-
-git add .
-git commit -m "Initial commit: Movie Recommendation System"
-```
-
-### B. Create a GitHub repo
-1. Go to GitHub → **New repository** → name it `movie-recommender`.
-2. Copy the **remote URL** (HTTPS).
-
-### C. Connect and push
-```bash
-git remote add origin https://github.com/<your-username>/movie-recommender.git
-git push -u origin main
-```
-
-> **Do NOT push** the full `data/` or `models/` folders. They are large and unnecessary for source control.  
-> If you need to share artifacts, consider **Git LFS** or publish a small sample plus a build script.
-
-### Suggested `.gitignore`
-```
-# Python
-.venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-
-# Data / Models
-data/
-models/
-!data/.gitkeep
-!models/.gitkeep
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-```
-
-Create empty keep files if you want folders to exist without contents:
-```bash
-mkdir -p data models
-echo > data/.gitkeep
-echo > models/.gitkeep
-```
+Python · Pandas · NumPy · Scikit-learn (cosine similarity) · FastAPI · Streamlit · SciPy
 
 ---
 
-## 📦 Optional: Docker (local)
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8000
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-Build & run:
-```bash
-docker build -t movie-rec .
-docker run -p 8000:8000 movie-rec
-```
+## License
 
----
-
-## 🔧 Troubleshooting
-- **KeyError: movieId not found** → Ensure your movie ID mapping aligns between `models/index.json` and `app/api`.
-- **Matrix memory error** → Use `scipy.sparse` and chunked cosine similarity or reduce to popular movies.
-- **CORS from Streamlit to API** → Enable CORSMiddleware in `api/main.py`.
-- **Port already in use** → Change with `--port 8001` (API) / `--server.port 8502` (Streamlit).
-
----
-
-## 📄 License
-MIT (feel free to adapt for learning and demos)
+MIT License
