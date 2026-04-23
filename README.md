@@ -1,4 +1,6 @@
 # Movie Recommendation System
+[![CI](https://github.com/deepanshu0110/movie-recommender/actions/workflows/ci.yml/badge.svg)](https://github.com/deepanshu0110/movie-recommender/actions)
+
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?style=flat-square&logo=fastapi)
