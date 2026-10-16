@@ -25,16 +25,16 @@ git clone https://github.com/deepanshu0110/movie-recommender.git
 cd movie-recommender
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-# Download MovieLens 100K, extract u.data + u.item to data/ml-100k/
-python scripts/build_similarity.py --data_dir data/ml-100k --out models/movie_similarity.npz
-uvicorn api.main:app --reload --port 8000   # Terminal 1
-streamlit run app/streamlit_app.py           # Terminal 2
+python download_data.py    # downloads MovieLens 100K into data/raw/ml-100k
+python train_model.py      # builds the item-item cosine similarity model
+python run_api.py          # Terminal 1: FastAPI on port 8000
+python run_dashboard.py    # Terminal 2: Streamlit on port 8501
 ```
 
 ## API Usage
 
 ```bash
-curl -X POST http://localhost:8000/recommend -H 'Content-Type: application/json' -d '{"movie_ids": [1, 50, 100], "top_n": 5}'
+curl -X POST "http://localhost:8000/recommend?n_recommendations=5" -H 'Content-Type: application/json' -d '[1, 50, 100]'
 ```
 
 ---
