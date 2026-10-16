@@ -39,6 +39,17 @@ curl -X POST "http://localhost:8000/recommend?n_recommendations=5" -H 'Content-T
 
 ---
 
+## Tests
+
+```bash
+pip install pytest
+pytest tests/ -v
+```
+
+The tests downloads MovieLens 100K, trains the model, and calls `/recommend`. GitHub Actions runs them on every push.
+
+---
+
 ## Tech Stack
 
 Python · Pandas · NumPy · Scikit-learn · SciPy · FastAPI · Streamlit
